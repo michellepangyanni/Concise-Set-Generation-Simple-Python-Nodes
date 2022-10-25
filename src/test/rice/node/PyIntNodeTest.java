@@ -9,22 +9,48 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test cases for the PyIntNode class.
  */
-class PyIntNodeTest {
+class PyIntNodeTest extends APyNodeTest {
 
     /**
-     * A sample PyIntNode.
+     * A PyIntNode whose domains include a single positive integer (using different
+     * integers for the exhaustive and random domains).
      */
-    private static PyIntNode node;
+    static PyIntNode singlePos;
+
+    /**
+     * A PyIntNode whose domains include a single negative integer (using different
+     * integers for the exhaustive and random domains).
+     */
+    static PyIntNode singleNeg;
+
+    /**
+     * A PyIntNode whose domains include multiple integer values (using different integers
+     * for the exhaustive and random domains).
+     */
+    static PyIntNode multipleVals;
 
     /**
      * Sets up all static fields for use in the test cases.
      */
     @BeforeAll
     static void setUp() {
-        node = new PyIntNode();
-        List<Integer> exDomain = List.of(1, 2);
-        node.setExDomain(exDomain);
-        node.setRanDomain(exDomain);
+        singlePos = new PyIntNode();
+        List<Integer> exDomain = Collections.singletonList(17);
+        List<Integer> ranDomain = Collections.singletonList(203);
+        singlePos.setExDomain(exDomain);
+        singlePos.setRanDomain(ranDomain);
+
+        singleNeg = new PyIntNode();
+        exDomain = Collections.singletonList(-3);
+        ranDomain = Collections.singletonList(-18);
+        singleNeg.setExDomain(exDomain);
+        singleNeg.setRanDomain(ranDomain);
+
+        multipleVals = new PyIntNode();
+        exDomain = List.of(-2, -1, 0, 1, 2);
+        ranDomain = List.of(-5, -4, -3, 3, 4, 5);
+        multipleVals.setExDomain(exDomain);
+        multipleVals.setRanDomain(ranDomain);
     }
 
     /**
@@ -32,7 +58,7 @@ class PyIntNodeTest {
      */
     @Test
     void testGetExDomain() {
-        assertEquals(List.of(1, 2), node.getExDomain());
+        assertEquals(Collections.singletonList(17), singlePos.getExDomain());
     }
 
     /**
@@ -40,7 +66,7 @@ class PyIntNodeTest {
      */
     @Test
     void testGetRanDomain() {
-        assertEquals(List.of(1, 2), node.getRanDomain());
+        assertEquals(Collections.singletonList(203), singlePos.getRanDomain());
     }
 
     /**
@@ -48,7 +74,7 @@ class PyIntNodeTest {
      */
     @Test
     void testGetLeftChild() {
-        assertNull(node.getLeftChild());
+        assertNull(singlePos.getLeftChild());
     }
 
     /**
@@ -56,17 +82,78 @@ class PyIntNodeTest {
      */
     @Test
     void testGetRightChild() {
-        assertNull(node.getRightChild());
+        assertNull(singlePos.getRightChild());
     }
 
     /**
-     * Tests genExVals().
+     * Tests genExVals() in the case that the domain consists of a single positive
+     * integer.
      */
     @Test
-    void testGenExVals() {
-        Set<PyIntObj> actual = node.genExVals();
-        Set<PyIntObj> expected = Set.of(new PyIntObj(1),
-                new PyIntObj(2));
+    void testGenExValsPos() {
+        Set<PyIntObj> actual = singlePos.genExVals();
+        Set<PyIntObj> expected = Set.of(new PyIntObj(17));
         assertEquals(expected, actual);
+    }
+
+    /**
+     * Tests genExVals() in the case that the domain consists of a single negative
+     * integer.
+     */
+    @Test
+    void testGenExValsNeg() {
+        Set<PyIntObj> actual = singleNeg.genExVals();
+        Set<PyIntObj> expected = Set.of(new PyIntObj(-3));
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Tests genExVals() in the case that the domain consists of multiple integers.
+     */
+    @Test
+    void testGenExValsMultiple() {
+        Set<PyIntObj> actual = multipleVals.genExVals();
+        Set<PyIntObj> expected = new HashSet<>();
+        for (int i = -2; i < 3; i++) {
+            expected.add(new PyIntObj(i));
+        }
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Tests genRandVal() in the case that the domain consists of a single positive
+     * integer.
+     */
+    @Test
+    void testGenRandValPos() {
+        Map<PyIntObj, Double> actual = buildDistribution(singlePos, 100);
+        Map<PyIntObj, Double> expected = Map.of(new PyIntObj(203), 1.0);
+        assertTrue(compareDistribution(expected, actual, 0.0));
+    }
+
+    /**
+     * Tests genRandVal() in the case that the domain consists of a single negative
+     * integer.
+     */
+    @Test
+    void testGenRandValNeg() {
+        Map<PyIntObj, Double> actual =
+                buildDistribution(singleNeg, 100);
+        Map<PyIntObj, Double> expected = Map.of(new PyIntObj(-18), 1.0);
+        assertTrue(compareDistribution(expected, actual, 0.0));
+    }
+
+    /**
+     * Tests genRandVal() in the case that the domain consists of multiple integers.
+     */
+    @Test
+    void testGenRandValMultiple() {
+        Map<PyIntObj, Double> actual =
+                buildDistribution(multipleVals, 10000);
+        Map<PyIntObj, Double> expected = new HashMap<>();
+        for (int i : new int[]{-5, -4, -3, 3, 4, 5}) {
+            expected.put(new PyIntObj(i), (1.0 / 6.0));
+        }
+        assertTrue(compareDistribution(expected, actual, 0.01));
     }
 }

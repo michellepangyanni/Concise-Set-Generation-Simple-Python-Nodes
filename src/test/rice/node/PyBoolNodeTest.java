@@ -9,22 +9,33 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test cases for the PyBoolNode class.
  */
-class PyBoolNodeTest {
+class PyBoolNodeTest extends APyNodeTest {
 
     /**
-     * A sample PyBoolNode.
+     * A bool node whose domains include both True and False.
      */
-    private static PyBoolNode node;
+    private static PyBoolNode both;
+
+    /**
+     * A bool node who has disjoint exhaustive and random domains.
+     */
+    private static PyBoolNode oppositeDomains;
 
     /**
      * Sets up all static fields for use in the test cases.
      */
     @BeforeAll
     static void setUp() {
-        node = new PyBoolNode();
+        // Set up a bool node whose domains include both True and False
+        both = new PyBoolNode();
         List<Integer> exDomain = List.of(0, 1);
-        node.setExDomain(exDomain);
-        node.setRanDomain(exDomain);
+        both.setExDomain(exDomain);
+        both.setRanDomain(exDomain);
+
+        // Set up a bool node who has disjoint exhaustive and random domains
+        oppositeDomains = new PyBoolNode();
+        oppositeDomains.setExDomain(Collections.singletonList(1));
+        oppositeDomains.setRanDomain(Collections.singletonList(0));
     }
 
     /**
@@ -32,7 +43,7 @@ class PyBoolNodeTest {
      */
     @Test
     void testGetExDomain() {
-        assertEquals(List.of(0, 1), node.getExDomain());
+        assertEquals(List.of(0, 1), both.getExDomain());
     }
 
     /**
@@ -40,7 +51,7 @@ class PyBoolNodeTest {
      */
     @Test
     void testGetRanDomain() {
-        assertEquals(List.of(0, 1), node.getRanDomain());
+        assertEquals(List.of(0, 1), both.getRanDomain());
     }
 
     /**
@@ -48,7 +59,7 @@ class PyBoolNodeTest {
      */
     @Test
     void testGetLeftChild() {
-        assertNull(node.getLeftChild());
+        assertNull(both.getLeftChild());
     }
 
     /**
@@ -56,17 +67,51 @@ class PyBoolNodeTest {
      */
     @Test
     void testGetRightChild() {
-        assertNull(node.getRightChild());
+        assertNull(both.getRightChild());
     }
 
     /**
-     * Tests genExVals().
+     * Tests genExVals() in the case that the exhaustive domain is {True, False}.
      */
     @Test
-    void testGenExVals() {
-        Set<PyBoolObj> actual = node.genExVals();
+    void testGenExValsBoth() {
+        Set<PyBoolObj> actual = both.genExVals();
         Set<PyBoolObj> expected = Set.of(new PyBoolObj(true),
                 new PyBoolObj(false));
         assertEquals(expected, actual);
+    }
+
+    /**
+     * Tests genExVals() in the case that the exhaustive domain is different from the
+     * random domain (to make sure that the correct domain is used).
+     */
+    @Test
+    void testGenExValsOpposite() {
+        Set<PyBoolObj> actual = oppositeDomains.genExVals();
+        Set<PyBoolObj> expected = Set.of(new PyBoolObj(true));
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Tests genRandVal() in the case that the random domain is {True, False}.
+     */
+    @Test
+    void testGenRandValBoth() {
+        Map<PyBoolObj, Double> actual = buildDistribution(both, 100000);
+        Map<PyBoolObj, Double> expected = Map.of(new PyBoolObj(true), 0.5,
+                new PyBoolObj(false), 0.5);
+        assertTrue(compareDistribution(expected, actual, 0.01));
+    }
+
+    /**
+     * Tests genRandVal() in the case that the exhaustive domain is different from the
+     * random domain (to make sure that the correct domain is used).
+     */
+    @Test
+    void testGenRandValOpposite() {
+        Map<PyBoolObj, Double> actual = buildDistribution(oppositeDomains, 100);
+        Map<PyBoolObj, Double> expected = Map.of(new PyBoolObj(false), 1.0,
+                new PyBoolObj(true), 0.0);
+        assertTrue(compareDistribution(expected, actual, 0.0));
     }
 }
